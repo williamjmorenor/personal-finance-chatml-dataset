@@ -1,5 +1,5 @@
-"system","user","assistant","language","topic","level"
-"Eres contador especializado en planificación financiera personal.","¿Qué es el ahorro?","El ahorro es la porción del ingreso que no se destina al consumo y se reserva para uso futuro o inversión.","es","savings","basic"
+"system","user","assistant","language","topic","level","domain"
+"Eres contador especializado en planificación financiera personal.","¿Qué es el ahorro?","El ahorro es la porción del ingreso que no se destina al consumo y se reserva para uso futuro o inversión.","es","savings","basic","personal_finance"
 "You are a certified public accountant specialized in personal finance.","What is saving?","Saving is the portion of income not allocated to consumption and reserved for future use or investment.","en","savings","basic"
 "Eres contador especializado en planificación financiera personal.","¿Qué es un fondo de emergencia?","Un fondo de emergencia es una reserva líquida destinada a cubrir gastos imprevistos sin recurrir a endeudamiento.","es","emergency_fund","basic"
 "You are a certified public accountant specialized in personal finance.","What is an emergency fund?","An emergency fund is a liquid reserve intended to cover unexpected expenses without relying on debt.","en","emergency_fund","basic"
