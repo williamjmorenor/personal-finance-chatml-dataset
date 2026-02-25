@@ -37,27 +37,37 @@ Each record includes a `language` field for filtering and evaluation.
 
 ## Dataset Structure
 
-Each entry follows the ChatML structure:
+Each entry follows this structure:
 
 ```json
 {
+  "pair_id": "000001",
+  "language": "en | es",
+  "domain": "personal_finance",
+  "topic": "string",
+  "level": "basic | intermediate | advanced",
+  "system": "...",
+  "question": "...",
+  "answer": "...",
   "messages": [
     {"role": "system", "content": "..."},
     {"role": "user", "content": "..."},
     {"role": "assistant", "content": "..."}
-  ],
-  "language": "en | es",
-  "topic": "string",
-  "level": "basic | intermediate | advanced"
+  ]
 }
 ```
 
 ## Fields
 
- - messages: ChatML conversation format.
+ - pair_id: Alignment identifier shared by equivalent EN/ES rows.
  - language: Language of the interaction.
+ - domain: Domain classification (for this dataset: `personal_finance`).
  - topic: Thematic classification.
  - level: Conceptual difficulty level.
+ - system: System instruction prompt.
+ - question: User question in flat format (equivalent to `messages[1].content`).
+ - answer: Assistant answer in flat format (equivalent to `messages[2].content`).
+ - messages: ChatML conversation format (`system`, `user`, `assistant`).
 
 ## Topics Covered
 
@@ -133,10 +143,10 @@ If you use this dataset in research, please cite:
 
 ```
 @dataset{bilingual_personal_finance_chatml,
-  author = {Your Name},
+  author = {William José Moreno Reyes (CP/MBA)},
   title = {Bilingual Personal Finance ChatML Dataset (EN/ES)},
   year = {2026},
-  publisher = {Hugging Face}
+  publisher = {BMO Soluciones, S.A.}
 }
 ```
 
@@ -147,6 +157,3 @@ MIT License (or chosen license).
 ## Contact
 
 For questions, suggestions, or collaboration opportunities, please open an issue in the repository.
-  "topic": "string",
-  "level": "basic | intermediate | advanced"
-}
