@@ -1,0 +1,9 @@
+# Bilingual Personal Finance ChatML Dataset (EN/ES) files
+
+## Overview
+To update this files update `data\raw\personal_finance_dataset.csv` and execute:
+
+```bash
+python scripts/csv_to_jsonl.py
+python scripts/csv_to_messages.py
+```
