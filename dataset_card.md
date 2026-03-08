@@ -5,12 +5,12 @@ language:
 license: mit
 multilinguality: bilingual
 size_categories:
-- 1K<n<10K
+- 10K<n<100K
 task_categories:
 - text-generation
 - question-answering
 task_ids:
-- instruction-tuning
+- closed-domain-qa
 pretty_name: Bilingual Personal Finance ChatML Dataset (EN/ES)
 ---
 
@@ -123,6 +123,42 @@ If provided:
 
 Otherwise, users may split according to their experimental needs.
 
+## Current Dataset Snapshot (2026-03-08)
+
+- Raw base source (`https://github.com/williamjmorenor/personal-finance-chatml-dataset/blob/main/data/raw/personal_finance_dataset.csv`): 3,781 lines (including header).
+- Raw seed source (`https://github.com/williamjmorenor/personal-finance-chatml-dataset/blob/main/data/raw/data_sed.csv`): 1 line (header only at this snapshot).
+- Processed full ChatML (`personal_finance_chatml_full.jsonl`): 17,580 records.
+- Processed messages-only (`data/processed/personal_finance_chatml_messages.jsonl`): 17,580 records.
+
+Note: The processed files are generated through the amplification pipeline and therefore contain the expanded bilingual training set.
+
+## Data Amplification Techniques Implemented
+
+The project implements deterministic template-based semantic amplification in `https://github.com/williamjmorenor/personal-finance-chatml-dataset/blob/main/scripts/dataset_amplification.py` with two complementary strategies:
+
+1. Seed semantic amplification (from `https://github.com/williamjmorenor/personal-finance-chatml-dataset/blob/main/data/raw/data_sed.csv`)
+- Uses three bilingual seed template files:
+  - `https://github.com/williamjmorenor/personal-finance-chatml-dataset/blob/main/data/amplification_templates/seed_definition_templates.json`
+  - `https://github.com/williamjmorenor/personal-finance-chatml-dataset/blob/main/data/amplification_templates/seed_variants_templates.json`
+  - `https://github.com/williamjmorenor/personal-finance-chatml-dataset/blob/main/data/amplification_templates/seed_examples_templates.json`
+- Expands each seed concept into multiple EN/ES question variants via `cadenas_amplificadas`.
+- Uses field-controlled answers (`definition_*`, `variants_*`, `examples_*`) to preserve intent consistency.
+
+2. Base pattern amplification (from `https://github.com/williamjmorenor/personal-finance-chatml-dataset/blob/main/data/raw/personal_finance_dataset.csv`)
+- Uses paired ES/EN pattern files:
+  - `https://github.com/williamjmorenor/personal-finance-chatml-dataset/blob/main/data/amplification_templates/base_rephrase_templates.json`
+  - `https://github.com/williamjmorenor/personal-finance-chatml-dataset/blob/main/data/amplification_templates/base_noisy_templates.json`
+- Detects original user prompts with `regex_cadena_original` and extracts `{concept}` using named groups.
+- Generates bilingual rephrased and noisy variants while preserving original assistant answers and metadata (`system`, `topic`, `level`, `domain`).
+
+3. Alignment and quality controls during amplification
+- Bilingual pair enforcement (ES/EN counterpart generation per synthetic pair).
+- Template validation (required sections/fields and non-empty amplified lists).
+- Duplicate prevention using signature checks (`language`, `user`, `assistant`).
+- Dynamic `pair_id` regeneration in output generation (`https://github.com/williamjmorenor/personal-finance-chatml-dataset/blob/main/scripts/csv_to_jsonl.py`) starting at `000001`.
+
+Current note: Seed amplification logic is implemented and active in the pipeline, but the current `https://github.com/williamjmorenor/personal-finance-chatml-dataset/blob/main/data/raw/data_sed.csv` snapshot contains only headers, so current growth is effectively driven by base pattern templates.
+
 ## Bias, Risks, and Limitations
 
  - The dataset reflects a structured accounting perspective.
@@ -131,6 +167,8 @@ Otherwise, users may split according to their experimental needs.
  - It may not reflect emerging financial instruments or regulatory changes.
 
 ## Versioning
+
+- v2.0 — Amplified dataset
 
  - v1.0 — Initial bilingual release
   - Future versions may expand:
