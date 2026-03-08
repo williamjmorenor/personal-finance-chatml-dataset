@@ -9,7 +9,6 @@ from collections import Counter
 from pathlib import Path
 from statistics import mean, median
 
-
 # ----------------------------
 # DEFAULT PATHS (PROJECT ROOT)
 # ----------------------------
@@ -30,7 +29,20 @@ VALID_LEVELS = {"basic", "intermediate", "advanced"}
 
 # Very lightweight language sanity check (heuristic, not perfect)
 EN_COMMON = {"the", "and", "is", "are", "to", "of", "in", "for", "with", "you", "your"}
-ES_COMMON = {"el", "la", "y", "es", "son", "de", "en", "para", "con", "tu", "tus", "que"}
+ES_COMMON = {
+    "el",
+    "la",
+    "y",
+    "es",
+    "son",
+    "de",
+    "en",
+    "para",
+    "con",
+    "tu",
+    "tus",
+    "que",
+}
 
 
 def percentile(values, p):
@@ -213,7 +225,10 @@ def stats_from_jsonl(jsonl_path: Path):
             if "messages" not in obj or not isinstance(obj["messages"], list):
                 schema_errors += 1
                 continue
-            if not all(isinstance(m, dict) and "role" in m and "content" in m for m in obj["messages"]):
+            if not all(
+                isinstance(m, dict) and "role" in m and "content" in m
+                for m in obj["messages"]
+            ):
                 schema_errors += 1
                 continue
 
@@ -282,7 +297,9 @@ def main():
     summarize_lengths("User", csv_stats["user_lens"])
     summarize_lengths("Assistant", csv_stats["assistant_lens"])
 
-    print(f"\nLanguage suspicion flags (heuristic): {len(csv_stats['suspicious_rows'])}")
+    print(
+        f"\nLanguage suspicion flags (heuristic): {len(csv_stats['suspicious_rows'])}"
+    )
     if csv_stats["suspicious_rows"]:
         print("First 10 flagged rows: (row_number, language, topic, level)")
         for item in csv_stats["suspicious_rows"][:10]:
