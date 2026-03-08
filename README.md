@@ -34,5 +34,14 @@ Each row follows ChatML:
 - Instruction tuning
 - Financial domain adaptation
 
+## Data Authoring And Amplification
+- Raw data authoring guide: `data/raw/README.md`
+- Amplification template guide: `data/amplification_templates/README.md`
+
+These guides explain:
+- how to add new rows to `data/raw/data_sed.csv` and `data/raw/personal_finance_dataset.csv`,
+- how to increase semantic amplification effect,
+- and how to keep bilingual ES/EN pairing compatible with the current pipeline.
+
 ## License
 MIT

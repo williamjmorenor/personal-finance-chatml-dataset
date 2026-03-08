@@ -1,0 +1,34 @@
+{
+  "nombre": "seed_examples_templates",
+  "origen_csv": "data/raw/data_sed.csv",
+  "es": {
+    "campo_semilla": "concept_es",
+    "campo_respuesta": "examples_es",
+    "cadena_original": "Que ejemplos hay de {concept_es}?",
+    "cadenas_amplificadas": [
+      "Cuales son algunos ejemplos de {concept_es}?",
+      "Puedes darme ejemplos practicos de {concept_es}?",
+      "Que casos reales ilustran {concept_es}?",
+      "Como se ve {concept_es} en la vida diaria?",
+      "Dame varios ejemplos claros de {concept_es}.",
+      "q ejemplos hay de {concept_es}?",
+      "me das ejemlos de {concept_es}?",
+      "Causa, pasame ejemplos de {concept_es} en corto."
+    ]
+  },
+  "en": {
+    "campo_semilla": "concept_en",
+    "campo_respuesta": "examples_en",
+    "cadena_original": "What are examples of {concept_en}?",
+    "cadenas_amplificadas": [
+      "Which are some examples of {concept_en}?",
+      "Can you share practical examples of {concept_en}?",
+      "What real-world cases illustrate {concept_en}?",
+      "How does {concept_en} appear in daily life?",
+      "Give me several clear examples of {concept_en}.",
+      "what examples of {concept_en} are there?",
+      "giv me examples of {concept_en}",
+      "Share short real examples of {concept_en}."
+    ]
+  }
+}

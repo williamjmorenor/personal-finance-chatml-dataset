@@ -1,0 +1,28 @@
+{
+  "nombre": "base_rephrase_templates",
+  "origen_csv": "data/raw/personal_finance_dataset.csv",
+  "patrones_pareados": [
+    {
+      "es": {
+        "cadena_original": "Que es {concept}?",
+        "regex_cadena_original": "^\\s*[¿]?\\s*(?:que|qué)\\s+(?:es|son)\\s+(?P<concept>.+?)\\?\\s*$",
+        "cadenas_amplificadas": [
+          "Me puede decir a que se refiere {concept}?",
+          "En que consiste {concept}?",
+          "Cual es la definicion de {concept}?",
+          "Me explicas de forma simple que es {concept}?"
+        ]
+      },
+      "en": {
+        "cadena_original": "What is {concept}?",
+        "regex_cadena_original": "^\\s*what\\s+(?:is|are)\\s+(?P<concept>.+?)\\?\\s*$",
+        "cadenas_amplificadas": [
+          "Can you tell me what {concept} refers to?",
+          "What does {concept} consist of?",
+          "What is the definition of {concept}?",
+          "Can you explain what {concept} is in simple terms?"
+        ]
+      }
+    }
+  ]
+}

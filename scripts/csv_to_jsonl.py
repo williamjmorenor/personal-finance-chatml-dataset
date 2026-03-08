@@ -19,14 +19,46 @@ DEFAULT_OUTPUT = (
 )
 
 
+def _regenerate_pair_ids(rows: list[dict], start_number: int = 1) -> None:
+    """Assign pair_id sequentially from start_number, grouping bilingual rows."""
+    next_pair_number = start_number
+    current_pair_id = f"{next_pair_number:06d}"
+    seen_languages: set[str] = set()
+
+    for row in rows:
+        language = (row.get("language") or "").strip().lower()
+
+        if not seen_languages:
+            seen_languages.add(language)
+            row["pair_id"] = current_pair_id
+            continue
+
+        if language in seen_languages:
+            next_pair_number += 1
+            current_pair_id = f"{next_pair_number:06d}"
+            seen_languages = {language}
+            row["pair_id"] = current_pair_id
+            continue
+
+        seen_languages.add(language)
+        row["pair_id"] = current_pair_id
+
+        if {"es", "en"}.issubset(seen_languages):
+            next_pair_number += 1
+            current_pair_id = f"{next_pair_number:06d}"
+            seen_languages.clear()
+
+
 def csv_to_jsonl(
     input_path: Path,
     output_path: Path,
     seed_path: Path,
 ) -> None:
     rows, added_pairs = load_and_amplify(input_path, seed_path)
+    _regenerate_pair_ids(rows, start_number=1)
     write_full_jsonl(output_path, rows)
     print(f"Amplification completed. Added bilingual pairs: {added_pairs}")
+    print("pair_id generated dynamically from 000001")
     print(f"Base CSV unchanged: {input_path}")
     print(f"Successfully generated: {output_path}")
 

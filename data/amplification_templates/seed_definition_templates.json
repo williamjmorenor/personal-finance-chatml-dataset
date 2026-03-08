@@ -1,0 +1,42 @@
+{
+  "nombre": "seed_definition_templates",
+  "origen_csv": "data/raw/data_sed.csv",
+  "es": {
+    "campo_semilla": "concept_es",
+    "campo_respuesta": "definition_es",
+    "cadena_original": "Que es {concept_es}?",
+    "cadenas_amplificadas": [
+      "Cual es el concepto de {concept_es}?",
+      "Podrias definir {concept_es} de forma sencilla?",
+      "Como se define {concept_es} en finanzas personales?",
+      "Que significa {concept_es} de manera practica?",
+      "En terminos simples, que es {concept_es}?",
+      "Me explicas {concept_es} como si fuera principiante?",
+      "q es {concept_es}?",
+      "qeu es el consecto de {concept_es}?",
+      "q s {concept_es}?",
+      "La neta no le entiendo a {concept_es}, me lo puedes explicar?",
+      "Que onda vos, como va eso de {concept_es}?",
+      "Parcero, me explica que es {concept_es}?"
+    ]
+  },
+  "en": {
+    "campo_semilla": "concept_en",
+    "campo_respuesta": "definition_en",
+    "cadena_original": "What is {concept_en}?",
+    "cadenas_amplificadas": [
+      "What is the concept of {concept_en}?",
+      "Could you define {concept_en} in simple terms?",
+      "How is {concept_en} defined in personal finance?",
+      "What does {concept_en} mean in practical terms?",
+      "In simple terms, what is {concept_en}?",
+      "Can you explain {concept_en} like I am a beginner?",
+      "wht is {concept_en}?",
+      "what is teh concept of {concept_en}?",
+      "what s {concept_en}?",
+      "I honestly do not get {concept_en}, can you explain it?",
+      "Hey, could you break down {concept_en} for me?",
+      "Could you explain what {concept_en} is, please?"
+    ]
+  }
+}

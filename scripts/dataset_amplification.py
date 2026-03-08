@@ -18,7 +18,15 @@ CSV_COLUMNS = [
     "domain",
 ]
 
-REQUIRED_BASE_COLUMNS = set(CSV_COLUMNS)
+REQUIRED_BASE_COLUMNS = {
+    "system",
+    "user",
+    "assistant",
+    "language",
+    "topic",
+    "level",
+    "domain",
+}
 REQUIRED_SEED_COLUMNS = {
     "concept_es",
     "definition_es",
@@ -42,87 +50,99 @@ SYSTEM_EN = (
     "basic concepts of personal finance"
 )
 
-# "templates" combines concept + definition.
-TEMPLATES = {
-    "ES": [
-        "Cual es el concepto de {concept_es}?",
-        "Podrias definir {concept_es} de forma sencilla?",
-        "Como se define {concept_es} en finanzas personales?",
-        "Que significa {concept_es} de manera practica?",
-        "En terminos simples, que es {concept_es}?",
-        "Me explicas {concept_es} como si fuera principiante?",
-        "q es {concept_es}?",
-        "qeu es el consecto de {concept_es}?",
-        "q s {concept_es}?",
-        "La neta no le entiendo a {concept_es}, me lo puedes explicar?",
-        "Que onda vos, como va eso de {concept_es}?",
-        "Parcero, me explica que es {concept_es}?",
-    ],
-    "EN": [
-        "What is the concept of {concept_en}?",
-        "Could you define {concept_en} in simple terms?",
-        "How is {concept_en} defined in personal finance?",
-        "What does {concept_en} mean in practical terms?",
-        "In simple terms, what is {concept_en}?",
-        "Can you explain {concept_en} like I am a beginner?",
-        "wht is {concept_en}?",
-        "what is teh concept of {concept_en}?",
-        "what s {concept_en}?",
-        "I honestly do not get {concept_en}, can you explain it?",
-        "Hey, could you break down {concept_en} for me?",
-        "Could you explain what {concept_en} is, please?",
-    ],
-}
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
+TEMPLATES_DIR = PROJECT_ROOT / "data" / "amplification_templates"
 
-# "variance" combines concept + variants.
-VARIANCE = {
-    "ES": [
-        "Cual es la importancia de {concept_es}?",
-        "Por que es importante {concept_es} en finanzas personales?",
-        "Que papel cumple {concept_es} en una buena salud financiera?",
-        "Para que sirve entender {concept_es}?",
-        "Como ayuda {concept_es} a tomar mejores decisiones financieras?",
-        "Por que conviene prestar atencion a {concept_es}?",
-        "q tan importante es {concept_es}?",
-        "xq es importante {concept_es}?",
-        "Mae, por que importa {concept_es} en la vida real?",
-    ],
-    "EN": [
-        "What is the importance of {concept_en}?",
-        "Why is {concept_en} important in personal finance?",
-        "What role does {concept_en} play in good financial health?",
-        "Why is understanding {concept_en} useful?",
-        "How does {concept_en} help with better financial decisions?",
-        "Why should someone pay attention to {concept_en}?",
-        "how important is {concept_en}?",
-        "y is {concept_en} important?",
-        "Why does {concept_en} matter in real life?",
-    ],
-}
+SEED_TEMPLATE_FILES = [
+    TEMPLATES_DIR / "seed_definition_templates.json",
+    TEMPLATES_DIR / "seed_variants_templates.json",
+    TEMPLATES_DIR / "seed_examples_templates.json",
+]
 
-# "examples" combines concept + examples.
-EXAMPLES = {
-    "ES": [
-        "Cuales son algunos ejemplos de {concept_es}?",
-        "Puedes darme ejemplos practicos de {concept_es}?",
-        "Que casos reales ilustran {concept_es}?",
-        "Como se ve {concept_es} en la vida diaria?",
-        "Dame varios ejemplos claros de {concept_es}.",
-        "q ejemplos hay de {concept_es}?",
-        "me das ejemlos de {concept_es}?",
-        "Causa, pasame ejemplos de {concept_es} en corto.",
-    ],
-    "EN": [
-        "Which are some examples of {concept_en}?",
-        "Can you share practical examples of {concept_en}?",
-        "What real-world cases illustrate {concept_en}?",
-        "How does {concept_en} appear in daily life?",
-        "Give me several clear examples of {concept_en}.",
-        "what examples of {concept_en} are there?",
-        "giv me examples of {concept_en}",
-        "Share short real examples of {concept_en}.",
-    ],
-}
+BASE_TEMPLATE_FILES = [
+    TEMPLATES_DIR / "base_rephrase_templates.json",
+    TEMPLATES_DIR / "base_noisy_templates.json",
+]
+
+
+def _load_json_template(template_path: Path) -> dict:
+    if not template_path.exists():
+        raise FileNotFoundError(f"Template file '{template_path}' does not exist.")
+
+    with template_path.open("r", encoding="utf-8") as template_file:
+        return json.load(template_file)
+
+
+def _validate_seed_template(template: dict, template_path: Path) -> None:
+    for language in ("es", "en"):
+        section = template.get(language)
+        if not isinstance(section, dict):
+            raise ValueError(
+                f"Template '{template_path}': Missing '{language}' section."
+            )
+
+        for field in ("campo_semilla", "campo_respuesta", "cadena_original"):
+            value = section.get(field)
+            if not isinstance(value, str) or not value.strip():
+                raise ValueError(
+                    f"Template '{template_path}': Invalid '{language}.{field}'."
+                )
+
+        amplified = section.get("cadenas_amplificadas")
+        if not isinstance(amplified, list) or not amplified:
+            raise ValueError(
+                f"Template '{template_path}': '{language}.cadenas_amplificadas' "
+                "must be a non-empty list."
+            )
+
+
+def _validate_base_template(template: dict, template_path: Path) -> None:
+    patterns = template.get("patrones_pareados")
+    if not isinstance(patterns, list) or not patterns:
+        raise ValueError(
+            f"Template '{template_path}': 'patrones_pareados' must be a non-empty list."
+        )
+
+    for idx, pattern in enumerate(patterns, start=1):
+        for language in ("es", "en"):
+            section = (pattern or {}).get(language)
+            if not isinstance(section, dict):
+                raise ValueError(
+                    f"Template '{template_path}': Pattern {idx} missing '{language}'."
+                )
+
+            for field in ("cadena_original", "regex_cadena_original"):
+                value = section.get(field)
+                if not isinstance(value, str) or not value.strip():
+                    raise ValueError(
+                        f"Template '{template_path}': Invalid '{language}.{field}' "
+                        f"in pattern {idx}."
+                    )
+
+            amplified = section.get("cadenas_amplificadas")
+            if not isinstance(amplified, list) or not amplified:
+                raise ValueError(
+                    f"Template '{template_path}': '{language}.cadenas_amplificadas' "
+                    f"must be non-empty in pattern {idx}."
+                )
+
+
+def _load_seed_templates() -> list[dict]:
+    templates: list[dict] = []
+    for template_path in SEED_TEMPLATE_FILES:
+        template = _load_json_template(template_path)
+        _validate_seed_template(template, template_path)
+        templates.append(template)
+    return templates
+
+
+def _load_base_templates() -> list[dict]:
+    templates: list[dict] = []
+    for template_path in BASE_TEMPLATE_FILES:
+        template = _load_json_template(template_path)
+        _validate_base_template(template, template_path)
+        templates.append(template)
+    return templates
 
 
 def _normalize_base_row(raw_row: dict) -> dict:
@@ -139,7 +159,7 @@ def _normalize_seed_row(raw_row: dict) -> dict:
 
 
 def _is_blank_base_row(row: dict) -> bool:
-    return not any((row.get(col) or "").strip() for col in CSV_COLUMNS)
+    return not any((row.get(col) or "").strip() for col in REQUIRED_BASE_COLUMNS)
 
 
 def validate_base_row(row: dict, row_number: int) -> None:
@@ -244,22 +264,77 @@ def _build_row(
     }
 
 
-def _append_semantic_pairs(
+def _extract_question_concept(question: str, original_regex: str) -> str | None:
+    question_clean = (question or "").strip()
+    if not question_clean:
+        return None
+
+    matcher = re.compile(original_regex, re.IGNORECASE)
+    match = matcher.match(question_clean)
+    if not match:
+        return None
+
+    concept = (match.group("concept") or "").strip()
+    return concept or None
+
+
+def _collect_bilingual_pairs(rows: list[dict]) -> list[tuple[dict, dict]]:
+    """Collect adjacent ES/EN rows that represent the same data pair."""
+    pairs: list[tuple[dict, dict]] = []
+    idx = 0
+
+    while idx < len(rows) - 1:
+        first = rows[idx]
+        second = rows[idx + 1]
+
+        same_group = (
+            first["topic"] == second["topic"]
+            and first["level"] == second["level"]
+            and first["domain"] == second["domain"]
+        )
+        bilingual = {first["language"], second["language"]} == {"es", "en"}
+
+        if same_group and bilingual:
+            if first["language"] == "es":
+                pairs.append((first, second))
+            else:
+                pairs.append((second, first))
+            idx += 2
+            continue
+
+        idx += 1
+
+    return pairs
+
+
+def _append_seed_semantic_pairs(
     dataset_rows: list[dict],
     seed_rows: list[dict],
-    question_dict: dict,
-    es_answer_field: str,
-    en_answer_field: str,
+    template: dict,
     next_pair_number: int,
 ) -> tuple[int, int]:
     signatures = {_signature(row) for row in dataset_rows}
     added_pairs = 0
 
+    es_section = template["es"]
+    en_section = template["en"]
+    es_templates = es_section["cadenas_amplificadas"]
+    en_templates = en_section["cadenas_amplificadas"]
+
+    if len(es_templates) != len(en_templates):
+        template_name = template.get("nombre", "seed_template")
+        raise ValueError(
+            f"Template '{template_name}' has different ES/EN template counts."
+        )
+
+    es_answer_field = es_section["campo_respuesta"]
+    en_answer_field = en_section["campo_respuesta"]
+
     for seed in seed_rows:
         topic = _slugify_topic(seed["concept_en"])
         level = "basic"
 
-        for es_template, en_template in zip(question_dict["ES"], question_dict["EN"]):
+        for es_template, en_template in zip(es_templates, en_templates):
             es_user = es_template.format(**seed)
             en_user = en_template.format(**seed)
             es_assistant = seed[es_answer_field]
@@ -286,44 +361,115 @@ def _append_semantic_pairs(
     return next_pair_number, added_pairs
 
 
+def _append_base_pattern_pairs(
+    dataset_rows: list[dict],
+    source_pairs: list[tuple[dict, dict]],
+    template: dict,
+    next_pair_number: int,
+) -> tuple[int, int]:
+    signatures = {_signature(row) for row in dataset_rows}
+    added_pairs = 0
+
+    for pattern in template["patrones_pareados"]:
+        es_pattern = pattern["es"]
+        en_pattern = pattern["en"]
+
+        es_templates = es_pattern["cadenas_amplificadas"]
+        en_templates = en_pattern["cadenas_amplificadas"]
+
+        if len(es_templates) != len(en_templates):
+            template_name = template.get("nombre", "base_template")
+            raise ValueError(
+                f"Template '{template_name}' has different ES/EN template counts."
+            )
+
+        es_regex = es_pattern["regex_cadena_original"]
+        en_regex = en_pattern["regex_cadena_original"]
+
+        for es_row, en_row in source_pairs:
+            es_concept = _extract_question_concept(es_row["user"], es_regex)
+            en_concept = _extract_question_concept(en_row["user"], en_regex)
+
+            if not es_concept or not en_concept:
+                continue
+
+            for es_template, en_template in zip(es_templates, en_templates):
+                es_user = es_template.format(concept=es_concept)
+                en_user = en_template.format(concept=en_concept)
+                es_assistant = es_row["assistant"]
+                en_assistant = en_row["assistant"]
+
+                es_key = ("es", es_user, es_assistant)
+                en_key = ("en", en_user, en_assistant)
+
+                if es_key in signatures or en_key in signatures:
+                    continue
+
+                next_pair_number += 1
+                pair_id = f"{next_pair_number:06d}"
+
+                new_es_row = _build_row(
+                    pair_id,
+                    "es",
+                    es_row["topic"],
+                    es_row["level"],
+                    es_user,
+                    es_assistant,
+                )
+                new_en_row = _build_row(
+                    pair_id,
+                    "en",
+                    en_row["topic"],
+                    en_row["level"],
+                    en_user,
+                    en_assistant,
+                )
+
+                # Preserve original metadata context from the base dataset pair.
+                new_es_row["system"] = es_row["system"]
+                new_en_row["system"] = en_row["system"]
+                new_es_row["domain"] = es_row["domain"]
+                new_en_row["domain"] = en_row["domain"]
+
+                dataset_rows.append(new_es_row)
+                dataset_rows.append(new_en_row)
+                signatures.add(es_key)
+                signatures.add(en_key)
+                added_pairs += 1
+
+    return next_pair_number, added_pairs
+
+
 def amplify_dataset(
     base_rows: list[dict], seed_rows: list[dict]
 ) -> tuple[list[dict], int]:
     dataset_rows = list(base_rows)
+    source_pairs = _collect_bilingual_pairs(base_rows)
+    seed_templates = _load_seed_templates()
+    base_templates = _load_base_templates()
+
     next_pair_number = max(
         (_parse_pair_id(row["pair_id"]) for row in dataset_rows), default=0
     )
     total_added_pairs = 0
 
-    next_pair_number, added = _append_semantic_pairs(
-        dataset_rows,
-        seed_rows,
-        TEMPLATES,
-        "definition_es",
-        "definition_en",
-        next_pair_number,
-    )
-    total_added_pairs += added
+    for seed_template in seed_templates:
+        next_pair_number, added = _append_seed_semantic_pairs(
+            dataset_rows,
+            seed_rows,
+            seed_template,
+            next_pair_number,
+        )
+        total_added_pairs += added
 
-    next_pair_number, added = _append_semantic_pairs(
-        dataset_rows,
-        seed_rows,
-        VARIANCE,
-        "variants_es",
-        "variants_en",
-        next_pair_number,
-    )
-    total_added_pairs += added
-
-    next_pair_number, added = _append_semantic_pairs(
-        dataset_rows,
-        seed_rows,
-        EXAMPLES,
-        "examples_es",
-        "examples_en",
-        next_pair_number,
-    )
-    total_added_pairs += added
+    for base_template in base_templates:
+        next_pair_number, added = _append_base_pattern_pairs(
+            dataset_rows,
+            source_pairs,
+            base_template,
+            next_pair_number,
+        )
+        total_added_pairs += added
 
     return dataset_rows, total_added_pairs
 

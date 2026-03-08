@@ -1,0 +1,32 @@
+{
+  "nombre": "base_noisy_templates",
+  "origen_csv": "data/raw/personal_finance_dataset.csv",
+  "patrones_pareados": [
+    {
+      "es": {
+        "cadena_original": "Que es {concept}?",
+        "regex_cadena_original": "^\\s*[¿]?\\s*(?:que|qué)\\s+(?:es|son)\\s+(?P<concept>.+?)\\?\\s*$",
+        "cadenas_amplificadas": [
+          "q es {concept}?",
+          "qe es {concept}?",
+          "q es eso de {concept}?",
+          "me dics q es {concept}?",
+          "podrias explikar {concept} rapido?",
+          "k onda con {concept}?"
+        ]
+      },
+      "en": {
+        "cadena_original": "What is {concept}?",
+        "regex_cadena_original": "^\\s*what\\s+(?:is|are)\\s+(?P<concept>.+?)\\?\\s*$",
+        "cadenas_amplificadas": [
+          "wht is {concept}?",
+          "wat is {concept}?",
+          "pls explain {concept}",
+          "can u explain {concept}?",
+          "what is {concept} btw?",
+          "im confused, whats {concept}?"
+        ]
+      }
+    }
+  ]
+}

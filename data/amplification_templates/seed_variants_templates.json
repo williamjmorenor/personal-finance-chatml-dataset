@@ -1,0 +1,36 @@
+{
+  "nombre": "seed_variants_templates",
+  "origen_csv": "data/raw/data_sed.csv",
+  "es": {
+    "campo_semilla": "concept_es",
+    "campo_respuesta": "variants_es",
+    "cadena_original": "Por que es importante {concept_es}?",
+    "cadenas_amplificadas": [
+      "Cual es la importancia de {concept_es}?",
+      "Por que es importante {concept_es} en finanzas personales?",
+      "Que papel cumple {concept_es} en una buena salud financiera?",
+      "Para que sirve entender {concept_es}?",
+      "Como ayuda {concept_es} a tomar mejores decisiones financieras?",
+      "Por que conviene prestar atencion a {concept_es}?",
+      "q tan importante es {concept_es}?",
+      "xq es importante {concept_es}?",
+      "Mae, por que importa {concept_es} en la vida real?"
+    ]
+  },
+  "en": {
+    "campo_semilla": "concept_en",
+    "campo_respuesta": "variants_en",
+    "cadena_original": "Why is {concept_en} important?",
+    "cadenas_amplificadas": [
+      "What is the importance of {concept_en}?",
+      "Why is {concept_en} important in personal finance?",
+      "What role does {concept_en} play in good financial health?",
+      "Why is understanding {concept_en} useful?",
+      "How does {concept_en} help with better financial decisions?",
+      "Why should someone pay attention to {concept_en}?",
+      "how important is {concept_en}?",
+      "y is {concept_en} important?",
+      "Why does {concept_en} matter in real life?"
+    ]
+  }
+}
