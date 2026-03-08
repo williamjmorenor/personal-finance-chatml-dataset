@@ -4,8 +4,10 @@
 
 import csv
 import json
+import random
 import re
 from pathlib import Path
+from typing import TypedDict
 
 CSV_COLUMNS = [
     "pair_id",
@@ -40,6 +42,23 @@ REQUIRED_SEED_COLUMNS = {
 
 VALID_LANGUAGES = {"es", "en"}
 VALID_LEVELS = {"basic", "intermediate", "advanced"}
+
+
+class ResponsePatternConfig(TypedDict):
+    original: str
+    variants: list[str]
+
+
+RESPONSE_PATTERN_BY_LANGUAGE: dict[str, ResponsePatternConfig] = {
+    "es": {
+        "original": "se define como",
+        "variants": ["se refiere a", "puede describirse como"],
+    },
+    "en": {
+        "original": "is defined as",
+        "variants": ["refers to", "can be described as"],
+    },
+}
 
 SYSTEM_ES = (
     "Eres un experto en finanzas personales explicando clara y amigablemente "
@@ -440,6 +459,59 @@ def _append_base_pattern_pairs(
     return next_pair_number, added_pairs
 
 
+def _append_response_pattern_variants(dataset_rows: list[dict]) -> int:
+    signatures = {_signature(row) for row in dataset_rows}
+    source_rows = list(dataset_rows)
+    added_rows = 0
+
+    for row in source_rows:
+        language = row["language"]
+        language_pattern = RESPONSE_PATTERN_BY_LANGUAGE.get(language)
+        if not language_pattern:
+            continue
+
+        original_pattern = language_pattern["original"]
+        pattern_regex = re.compile(re.escape(original_pattern), re.IGNORECASE)
+        assistant_text = row["assistant"]
+
+        if not pattern_regex.search(assistant_text):
+            continue
+
+        for variant in language_pattern["variants"]:
+            if random.choice([0, 1]) == 0:
+                continue
+
+            new_assistant = pattern_regex.sub(variant, assistant_text, count=1).strip()
+            new_key = (language, row["user"], new_assistant)
+
+            if new_key in signatures:
+                continue
+
+            # Keep all metadata equal to the source row; only assistant changes.
+            new_row = dict(row)
+            new_row["assistant"] = new_assistant
+
+            dataset_rows.append(new_row)
+            signatures.add(new_key)
+            added_rows += 1
+
+    return added_rows
+
+
+def _deduplicate_rows(rows: list[dict]) -> list[dict]:
+    deduped: list[dict] = []
+    seen: set[tuple[str, str, str]] = set()
+
+    for row in rows:
+        row_key = _signature(row)
+        if row_key in seen:
+            continue
+        seen.add(row_key)
+        deduped.append(row)
+
+    return deduped
+
+
 def amplify_dataset(
     base_rows: list[dict], seed_rows: list[dict]
 ) -> tuple[list[dict], int]:
@@ -470,6 +542,12 @@ def amplify_dataset(
             next_pair_number,
         )
         total_added_pairs += added
+
+    # Response pattern amplification (assistant-side variants).
+    total_added_pairs += _append_response_pattern_variants(dataset_rows)
+
+    # Final dataset deduplication by (language, user, assistant).
+    dataset_rows = _deduplicate_rows(dataset_rows)
 
     return dataset_rows, total_added_pairs
 
