@@ -38,6 +38,9 @@ REQUIRED_SEED_COLUMNS = {
     "definition_en",
     "variants_en",
     "examples_en",
+    "topic",
+    "level",
+    "domain",
 }
 
 VALID_LANGUAGES = {"es", "en"}
@@ -174,7 +177,11 @@ def _normalize_base_row(raw_row: dict) -> dict:
 
 
 def _normalize_seed_row(raw_row: dict) -> dict:
-    return {k: (raw_row.get(k) or "").strip() for k in REQUIRED_SEED_COLUMNS}
+    row = {k: (raw_row.get(k) or "").strip() for k in REQUIRED_SEED_COLUMNS}
+    row["topic"] = row["topic"].lower()
+    row["level"] = row["level"].lower()
+    row["domain"] = row["domain"].lower()
+    return row
 
 
 def _is_blank_base_row(row: dict) -> bool:
@@ -205,6 +212,12 @@ def validate_seed_row(seed_row: dict, row_number: int) -> None:
     for col in REQUIRED_SEED_COLUMNS:
         if not seed_row.get(col):
             raise ValueError(f"Seed row {row_number}: Missing or empty field '{col}'.")
+
+    if seed_row["level"] not in VALID_LEVELS:
+        raise ValueError(
+            f"Seed row {row_number}: Invalid level '{seed_row['level']}'. "
+            f"Must be one of {sorted(VALID_LEVELS)}."
+        )
 
 
 def read_base_dataset(base_csv_path: Path) -> list[dict]:
@@ -242,6 +255,15 @@ def read_seed_dataset(seed_csv_path: Path) -> list[dict]:
             raise ValueError(f"Missing required seed columns: {sorted(missing)}")
 
         for row_number, raw_row in enumerate(reader, start=2):
+            # If required columns map to None, delimiters/quotes are likely broken.
+            if None in raw_row or any(
+                raw_row.get(col) is None for col in REQUIRED_SEED_COLUMNS
+            ):
+                raise ValueError(
+                    f"Seed row {row_number}: Malformed CSV row. "
+                    "Check commas/quotes so all seed columns are mapped correctly."
+                )
+
             row = _normalize_seed_row(raw_row)
             validate_seed_row(row, row_number)
             rows.append(row)
@@ -254,11 +276,6 @@ def _parse_pair_id(pair_id: str) -> int:
     return int(clean) if clean.isdigit() else 0
 
 
-def _slugify_topic(text: str) -> str:
-    slug = re.sub(r"[^a-z0-9]+", "_", text.lower()).strip("_")
-    return slug or "personal_finance"
-
-
 def _signature(row: dict) -> tuple[str, str, str]:
     return (row["language"], row["user"], row["assistant"])
 
@@ -268,6 +285,7 @@ def _build_row(
     language: str,
     topic: str,
     level: str,
+    domain: str,
     user: str,
     assistant: str,
 ) -> dict:
@@ -279,7 +297,7 @@ def _build_row(
         "language": language,
         "topic": topic,
         "level": level,
-        "domain": "personal_finance",
+        "domain": domain,
     }
 
 
@@ -350,8 +368,9 @@ def _append_seed_semantic_pairs(
     en_answer_field = en_section["campo_respuesta"]
 
     for seed in seed_rows:
-        topic = _slugify_topic(seed["concept_en"])
-        level = "basic"
+        topic = seed["topic"]
+        level = seed["level"]
+        domain = seed["domain"]
 
         for es_template, en_template in zip(es_templates, en_templates):
             es_user = es_template.format(**seed)
@@ -368,8 +387,24 @@ def _append_seed_semantic_pairs(
             next_pair_number += 1
             pair_id = f"{next_pair_number:06d}"
 
-            es_row = _build_row(pair_id, "es", topic, level, es_user, es_assistant)
-            en_row = _build_row(pair_id, "en", topic, level, en_user, en_assistant)
+            es_row = _build_row(
+                pair_id,
+                "es",
+                topic,
+                level,
+                domain,
+                es_user,
+                es_assistant,
+            )
+            en_row = _build_row(
+                pair_id,
+                "en",
+                topic,
+                level,
+                domain,
+                en_user,
+                en_assistant,
+            )
 
             dataset_rows.append(es_row)
             dataset_rows.append(en_row)
@@ -432,6 +467,7 @@ def _append_base_pattern_pairs(
                     "es",
                     es_row["topic"],
                     es_row["level"],
+                    es_row["domain"],
                     es_user,
                     es_assistant,
                 )
@@ -440,6 +476,7 @@ def _append_base_pattern_pairs(
                     "en",
                     en_row["topic"],
                     en_row["level"],
+                    en_row["domain"],
                     en_user,
                     en_assistant,
                 )
@@ -447,8 +484,6 @@ def _append_base_pattern_pairs(
                 # Preserve original metadata context from the base dataset pair.
                 new_es_row["system"] = es_row["system"]
                 new_en_row["system"] = en_row["system"]
-                new_es_row["domain"] = es_row["domain"]
-                new_en_row["domain"] = en_row["domain"]
 
                 dataset_rows.append(new_es_row)
                 dataset_rows.append(new_en_row)
@@ -525,20 +560,22 @@ def amplify_dataset(
     )
     total_added_pairs = 0
 
-    for seed_template in seed_templates:
-        next_pair_number, added = _append_seed_semantic_pairs(
-            dataset_rows,
-            seed_rows,
-            seed_template,
-            next_pair_number,
-        )
-        total_added_pairs += added
-
+    # Curriculum order: first amplify the curated/base dataset,
+    # then append seed-based semantic expansion.
     for base_template in base_templates:
         next_pair_number, added = _append_base_pattern_pairs(
             dataset_rows,
             source_pairs,
             base_template,
+            next_pair_number,
+        )
+        total_added_pairs += added
+
+    for seed_template in seed_templates:
+        next_pair_number, added = _append_seed_semantic_pairs(
+            dataset_rows,
+            seed_rows,
+            seed_template,
             next_pair_number,
         )
         total_added_pairs += added
